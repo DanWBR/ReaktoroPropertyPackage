@@ -25,6 +25,7 @@ Imports DWSIM.Interfaces
 Imports System.IO
 Imports Python.Runtime
 Imports DWSIM.Thermodynamics.BaseClasses
+Imports DWSIM.GlobalSettings
 
 <System.Serializable()> Public Class ReaktoroFlash
 
@@ -90,7 +91,7 @@ Imports DWSIM.Thermodynamics.BaseClasses
             End If
         Next
 
-        If Not PythonInitialized Then
+        If Not PythonPathSet Then
 
             Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
             Dim append As String = ppath + ";" + Path.Combine(ppath, "Library", "bin") + ";"
@@ -103,12 +104,18 @@ Imports DWSIM.Thermodynamics.BaseClasses
             ' Set PythonPath
             Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(p1, "Lib"), EnvironmentVariableTarget.Process)
 
+            PythonPathSet = True
+
+        End If
+
+        If Not Settings.PythonInitialized Then
+
             proppack.Flowsheet.RunCodeOnUIThread(Sub()
                                                      PythonEngine.Initialize()
                                                      PythonEngine.BeginAllowThreads()
                                                  End Sub)
 
-            PythonInitialized = True
+            Settings.PythonInitialized = True
 
         End If
 

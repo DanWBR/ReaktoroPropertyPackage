@@ -2,6 +2,7 @@
 Imports DWSIM.Thermodynamics.PropertyPackages
 Imports Python.Runtime
 Imports DWSIM.ExtensionMethods
+Imports DWSIM.GlobalSettings
 
 Public Class ActivityCoefficients
 
@@ -38,7 +39,7 @@ Public Class ActivityCoefficients
             End If
         Next
 
-        If Not PythonInitialized Then
+        If Not PythonPathSet Then
 
             Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
             Dim append As String = ppath + ";" + Path.Combine(ppath, "Library", "bin") + ";"
@@ -51,12 +52,18 @@ Public Class ActivityCoefficients
             ' Set PythonPath
             Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(p1, "Lib"), EnvironmentVariableTarget.Process)
 
+            PythonPathSet = True
+
+        End If
+
+        If Not Settings.PythonInitialized Then
+
             pp.Flowsheet.RunCodeOnUIThread(Sub()
                                                PythonEngine.Initialize()
                                                PythonEngine.BeginAllowThreads()
                                            End Sub)
 
-            PythonInitialized = True
+            Settings.PythonInitialized = True
 
         End If
 
