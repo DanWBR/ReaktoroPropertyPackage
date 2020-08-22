@@ -5,11 +5,11 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{D670C3B0-1EE1-47D4-99C6-8820CFB072F7}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <RootNamespace>ReaktoroPropertyPackage</RootNamespace>
     <AssemblyName>ReaktoroPropertyPackage</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <MyType>Console</MyType>
+    <MyType>Windows</MyType>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -44,7 +44,8 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Sub Main</StartupObject>
+    <StartupObject>
+    </StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CapeOpen">
@@ -73,6 +74,7 @@
     </Reference>
     <Reference Include="FileHelpers">
       <HintPath>..\dwsim6\DistPackages\Windows\FileHelpers.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\dwsim6\DistPackages\Windows\Newtonsoft.Json.dll</HintPath>
@@ -104,6 +106,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActivityCoefficients.vb" />
     <Compile Include="CompoundMap.vb" />
     <Compile Include="ReaktoroPP.vb" />
     <Compile Include="ReaktoroFlash.vb" />

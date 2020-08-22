@@ -22,10 +22,23 @@ Imports DWSIM.ExtensionMethods
 Imports DWSIM.Thermodynamics
 Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
 Imports DWSIM.Interfaces
+Imports System.IO
+Imports Python.Runtime
+Imports DWSIM.Thermodynamics.BaseClasses
 
 <System.Serializable()> Public Class ReaktoroFlash
 
     Inherits FlashAlgorithm
+
+    Public CompoundMaps As CompoundMapper
+
+    Public Sub New()
+
+        MyBase.New()
+
+        If CompoundMaps Is Nothing Then CompoundMaps = New CompoundMapper()
+
+    End Sub
 
     Public Overrides ReadOnly Property InternalUseOnly As Boolean
         Get
@@ -66,7 +79,142 @@ Imports DWSIM.Interfaces
 
         Vf0 = Vx.Clone
 
+        Dim names = proppack.RET_VNAMES().ToList
+        Dim formulas As New List(Of String)
+
+        For Each na In names
+            If Not CompoundMaps.Maps.ContainsKey(na) Then
+                Throw New Exception(String.Format("Compound {0} is not supported by this Property Package [{1}].", na, proppack.ComponentName))
+            End If
+        Next
+
+        Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
+        Dim append As String = ppath + ";" + Path.Combine(ppath, "Library", "bin") + ";"
+
+        Dim p1 As String = append + Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine)
+        ' Set Path
+        Environment.SetEnvironmentVariable("PATH", p1, EnvironmentVariableTarget.Process)
+        ' Set PythonHome
+        Environment.SetEnvironmentVariable("PYTHONHOME", ppath, EnvironmentVariableTarget.Process)
+        ' Set PythonPath
+        Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(p1, "Lib"), EnvironmentVariableTarget.Process)
+
         Dim speciesPhases As New Dictionary(Of String, String)
+        Dim speciesAmounts As New Dictionary(Of String, Double)
+        Dim speciesAmountsFinal As New Dictionary(Of String, Double)
+        Dim compoundAmountsFinal As New Dictionary(Of String, Double)
+        Dim inverseMaps As New Dictionary(Of String, String)
+
+        Dim aqueous As String = "", gaseous As String = ""
+
+        i = 0
+        For Each na In names
+            formulas.Add(CompoundMaps.Maps(na).Formula)
+            speciesAmounts.Add(CompoundMaps.Maps(na).Formula, Vx(i))
+            If CompoundMaps.Maps(na).AqueousName <> "" Then
+                aqueous += CompoundMaps.Maps(na).AqueousName + " "
+                speciesPhases.Add(CompoundMaps.Maps(na).AqueousName, "L")
+                inverseMaps.Add(CompoundMaps.Maps(na).AqueousName, CompoundMaps.Maps(na).Formula)
+            End If
+            If CompoundMaps.Maps(na).GaseousName <> "" Then
+                gaseous += CompoundMaps.Maps(na).GaseousName + " "
+                speciesPhases.Add(CompoundMaps.Maps(na).GaseousName, "V")
+                inverseMaps.Add(CompoundMaps.Maps(na).GaseousName, CompoundMaps.Maps(na).Formula)
+            End If
+            i += 1
+        Next
+        aqueous = aqueous.TrimEnd()
+        gaseous = gaseous.TrimEnd()
+
+        Using (Py.GIL())
+
+            Dim reaktoro As Object = Py.Import("reaktoro")
+
+            'Initialize a thermodynamic database
+            Dim db = reaktoro.Database("supcrt98.xml")
+
+            'Define the chemical system
+            Dim editor = reaktoro.ChemicalEditor(db)
+
+            editor.addAqueousPhase(aqueous)
+            editor.addGaseousPhase(gaseous)
+
+            'Construct the chemical system
+            Dim mySystem = reaktoro.ChemicalSystem(editor)
+
+            'Define the chemical equilibrium problem
+            Dim problem = reaktoro.EquilibriumProblem(mySystem)
+            problem.setTemperature(T, "kelvin")
+            problem.setPressure(P, "pascal")
+
+            For Each item In speciesAmounts
+                problem.add(item.Key, item.Value, "mol")
+            Next
+
+            'Calculate the chemical equilibrium state
+            Dim state = reaktoro.equilibrate(problem)
+
+            Dim Ln As Double = state.phaseAmount("Aqueous").ToString().ToDoubleFromCurrent()
+            Dim Vn As Double = state.phaseAmount("Gaseous").ToString().ToDoubleFromCurrent()
+            Dim Sn As Double = 0.0
+
+            Dim properties = state.properties
+
+            Dim species = mySystem.species()
+            Dim amounts = state.speciesAmounts()
+
+            i = 0
+            For Each item In species
+                Dim name = item.name.ToString()
+                speciesAmountsFinal.Add(name, amounts(i).ToString().ToDoubleFromCurrent())
+                If Not compoundAmountsFinal.ContainsKey(inverseMaps(name)) Then
+                    compoundAmountsFinal.Add(inverseMaps(name), 0.0)
+                End If
+                compoundAmountsFinal(inverseMaps(name)) += amounts(i).ToString().ToDoubleFromCurrent()
+                If CompoundProperties(formulas.IndexOf(inverseMaps(name))).IsSalt Then
+                    speciesPhases(name) = "S"
+                    Sn += amounts(i).ToString().ToDoubleFromCurrent()
+                    Ln -= amounts(i).ToString().ToDoubleFromCurrent()
+                End If
+                i += 1
+            Next
+
+            i = 0
+            For Each item In species
+                Dim name = item.name.ToString()
+                Dim index = formulas.IndexOf(inverseMaps(name))
+                Select Case speciesPhases(name)
+                    Case "V"
+                        Vxv(index) = amounts(i).ToString().ToDoubleFromCurrent()
+                    Case "L"
+                        Vxl(index) = amounts(i).ToString().ToDoubleFromCurrent()
+                    Case "S"
+                        Vxs(index) = amounts(i).ToString().ToDoubleFromCurrent()
+                End Select
+                Vnf(index) = compoundAmountsFinal(inverseMaps(name))
+                i += 1
+            Next
+
+            Vxv = Vxv.NormalizeY()
+            Vxl = Vxl.NormalizeY()
+            Vxs = Vxs.NormalizeY()
+
+            Dim ac = properties.lnActivityCoefficients().val
+
+            i = 0
+            For Each item In ac
+                Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
+                activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromCurrent())
+                i += 1
+            Next
+
+            V = Vn / (Vn + Ln + Sn)
+            L = Ln / (Vn + Ln + Sn)
+            S = Sn / (Vn + Ln + Sn)
+
+            sumN = Vn + Ln + Sn
+
+        End Using
 
         'return flash calculation results.
 

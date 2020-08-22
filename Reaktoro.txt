@@ -17,14 +17,14 @@ Sodium Chloride	NaCl	NaCl(aq)
 Sodium Iodide	NaI	NaI(aq)		
 Ammonium (ion)	NH4+	NH4+		
 Nitrate (ion)	NO3-	NO3-		
-Sulfate (ion)	SO42-	SO4--		
+Sulfate (ion)	SO4--	SO4--		
 Hydron	H+	H+		
 Hydroxide	OH-	OH-		
 Salt	NaCl	NaCl(aq)		
 Bisulfide (ion)	HS-	HS-		
 Bicarbonate (ion)	HCO3-	HCO3-		
-Carbonate (ion)	CO3-2	CO3--		
-Sulfide (ion)	S-2	S2--		
+Carbonate (ion)	CO3--	CO3--		
+Sulfide (ion)	S2--	S2--		
 Sodium Hydroxide	NaOH	NaOH(aq)		
 Cesium (ion)	Cs+	Cs+		
 Perchlorate (ion)	ClO4-	ClO4-		
@@ -33,7 +33,7 @@ Argon	Ar		Ar(g)	Ar(liq)
 Ethylene	CH2CH2		C2H4(g)	C2H4(liq)
 Methane	CH4		CH4(g)	CH4(liq)
 Carbon monoxide	CO	CO(aq)	CO(g)	CO(liq)
-Carbon dioxide	OCO	CO2(aq)	CO2(g)	CO2(liq)
+Carbon dioxide	CO2	CO2(aq)	CO2(g)	CO2(liq)
 Hydrogen	H2	H2(aq)	H2(g)	H2(liq)
 Water	H2O	H2O(l)	H2O(g)	H2O(liq)
 Hydrogen sulfide	H2S	H2S(aq)	H2S(g)	H2S(liq)

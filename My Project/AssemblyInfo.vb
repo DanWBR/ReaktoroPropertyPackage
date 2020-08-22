@@ -8,11 +8,11 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("ReaktoroPropertyPackage")>
-<Assembly: AssemblyDescription("")>
+<Assembly: AssemblyTitle("Reaktoro Property Package")>
+<Assembly: AssemblyDescription("Electrolyte Property Package for DWSIM Simulator (Reaktoro Backend)")>
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("ReaktoroPropertyPackage")>
-<Assembly: AssemblyCopyright("Copyright ©  2020")>
+<Assembly: AssemblyCopyright("Copyright ©  2020 Daniel Medeiros")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
