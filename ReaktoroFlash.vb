@@ -58,6 +58,8 @@ Imports DWSIM.Thermodynamics.BaseClasses
 
     Public Overloads Function Flash_PT(Vx As Array, T As Double, P As Double) As Dictionary(Of String, Object)
 
+        DWSIM.Thermodynamics.Calculator.CheckParallelPInvoke()
+
         Dim n As Integer = CompoundProperties.Count - 1
         Dim activcoeff(n) As Double
         Dim i As Integer
@@ -88,16 +90,27 @@ Imports DWSIM.Thermodynamics.BaseClasses
             End If
         Next
 
-        Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
-        Dim append As String = ppath + ";" + Path.Combine(ppath, "Library", "bin") + ";"
+        If Not PythonInitialized Then
 
-        Dim p1 As String = append + Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine)
-        ' Set Path
-        Environment.SetEnvironmentVariable("PATH", p1, EnvironmentVariableTarget.Process)
-        ' Set PythonHome
-        Environment.SetEnvironmentVariable("PYTHONHOME", ppath, EnvironmentVariableTarget.Process)
-        ' Set PythonPath
-        Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(p1, "Lib"), EnvironmentVariableTarget.Process)
+            Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
+            Dim append As String = ppath + ";" + Path.Combine(ppath, "Library", "bin") + ";"
+
+            Dim p1 As String = append + Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine)
+            ' Set Path
+            Environment.SetEnvironmentVariable("PATH", p1, EnvironmentVariableTarget.Process)
+            ' Set PythonHome
+            Environment.SetEnvironmentVariable("PYTHONHOME", ppath, EnvironmentVariableTarget.Process)
+            ' Set PythonPath
+            Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(p1, "Lib"), EnvironmentVariableTarget.Process)
+
+            proppack.Flowsheet.RunCodeOnUIThread(Sub()
+                                                     PythonEngine.Initialize()
+                                                     PythonEngine.BeginAllowThreads()
+                                                 End Sub)
+
+            PythonInitialized = True
+
+        End If
 
         Dim speciesPhases As New Dictionary(Of String, String)
         Dim speciesAmounts As New Dictionary(Of String, Double)
