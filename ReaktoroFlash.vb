@@ -59,8 +59,6 @@ Imports DWSIM.GlobalSettings
 
     Public Overloads Function Flash_PT(Vx As Array, T As Double, P As Double) As Dictionary(Of String, Object)
 
-        DWSIM.Thermodynamics.Calculator.CheckParallelPInvoke()
-
         Dim n As Integer = CompoundProperties.Count - 1
         Dim activcoeff(n) As Double
         Dim i As Integer
