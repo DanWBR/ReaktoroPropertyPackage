@@ -109,6 +109,12 @@
   <ItemGroup>
     <Compile Include="ActivityCoefficients.vb" />
     <Compile Include="CompoundMap.vb" />
+    <Compile Include="FormConfig.Designer.vb">
+      <DependentUpon>FormConfig.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormConfig.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Module1.vb" />
     <Compile Include="ReaktoroPP.vb" />
     <Compile Include="ReaktoroFlash.vb" />
@@ -131,6 +137,9 @@
     <Compile Include="Test.vb" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="FormConfig.resx">
+      <DependentUpon>FormConfig.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
@@ -151,6 +160,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Reaktoro.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\reaktoro.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

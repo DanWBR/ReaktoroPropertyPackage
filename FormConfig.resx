@@ -117,8 +117,34 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="reaktoro" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\reaktoro.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <metadata name="Column1.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <metadata name="Column2.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <metadata name="Column1.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <metadata name="Column2.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="label3.Text" xml:space="preserve">
+    <value>DISCLAIMER
+
+The data and information within this add-in has been obtained from a wide variety of literature sources. While reasonable care has been exercised in the collection of data and testing of this software, the author of this software disclaims any warranty, expressed or implied, as to the accuracy or reliability of the data or calculations contained therein.
+
+The results of calculations obtained from tthis software yield approximate results, which will not always be suitable for every application. The software is designed for use by trained professional personnel and is not a substitute for sound professional judgment. It is the sole responsibility of the user to validate the data presented by this software and to determine whether the results of this program are accurate and suitable for any specific purpose. No guarantee of accuracy or fitness for any purpose is expressed or implied.
+
+The author strongly recommends that the data be checked against other sources and/or methods before use and application. The author shall not be held liable for any direct, indirect, consequential or incidental damages incurred through use of the data or calculations.
+
+LICENSE INFO
+
+This Property Package Library is licensed under the GPLv3 License: https://github.com/DanWBR/ReaktoroPropertyPackage/blob/master/LICENSE
+
+Reaktoro is licensed under the LGPLv2.1 License: https://github.com/reaktoro/reaktoro/blob/master/LICENSE
+
+
+</value>
   </data>
 </root>

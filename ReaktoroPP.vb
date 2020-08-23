@@ -45,7 +45,7 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
         ComponentName = "Reaktoro (Aqueous Electrolytes)"
         ComponentDescription = "Reaktoro is a computational framework developed in C++ and Python that implements numerical methods for modeling chemically reactive processes governed by either chemical equilibrium, chemical kinetics, or a combination of both."
 
-        IsConfigurable = False
+        IsConfigurable = True
 
     End Sub
 
@@ -57,6 +57,8 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
 
     Public Overrides Sub DisplayEditingForm()
 
+        Dim f As New FormConfig
+        f.Show()
 
     End Sub
 
