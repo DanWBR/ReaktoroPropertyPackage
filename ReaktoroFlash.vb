@@ -76,7 +76,35 @@ Imports DWSIM.GlobalSettings
         Dim K(n), Vnf(n), Vnl(n), Vnl_ant(n), Vxl(n), Vns(n), Vxs(n), Vnv(n), Vxv(n), Vxv_ant(n), Vf(n), V, S, L, Vp(n) As Double
         Dim sumN As Double = 0
 
-        'get water index in the array.
+        Dim saltonly As Boolean = False
+        For i = 0 To Vx.Length - 1
+            If Vx(i) > 0 And CompoundProperties(i).IsSalt Then
+                saltonly = True
+            ElseIf Vx(i) > 0 And Not CompoundProperties(i).IsSalt Then
+                saltonly = False
+                Exit For
+            End If
+        Next
+
+        If saltonly Then
+
+            'return flash calculation results.
+
+            Dim resultsS As New Dictionary(Of String, Object)
+
+            resultsS.Add("MixtureMoleFlows", Vx)
+            resultsS.Add("VaporPhaseMoleFraction", 0.0)
+            resultsS.Add("LiquidPhaseMoleFraction", 0.0)
+            resultsS.Add("SolidPhaseMoleFraction", 1.0)
+            resultsS.Add("VaporPhaseMolarComposition", proppack.RET_NullVector)
+            resultsS.Add("LiquidPhaseMolarComposition", proppack.RET_NullVector)
+            resultsS.Add("SolidPhaseMolarComposition", Vx)
+            resultsS.Add("LiquidPhaseActivityCoefficients", proppack.RET_UnitaryVector)
+            resultsS.Add("MoleSum", 1.0)
+
+            Return resultsS
+
+        End If
 
         Vnf = Vx.Clone
 
