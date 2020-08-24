@@ -12,6 +12,6 @@ Public Class FormConfig
         For Each item In mapper.Maps.Values
             DataGridView1.Rows.Add(New Object() {item.Name, item.Formula})
         Next
-        DataGridView1.Sort(Column1, ComponentModel.ListSortDirection.Descending)
+        DataGridView1.Sort(Column1, ComponentModel.ListSortDirection.Ascending)
     End Sub
 End Class

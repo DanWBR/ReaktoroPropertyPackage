@@ -91,6 +91,7 @@ Public Class ActivityCoefficients
         Using (Py.GIL())
 
             Dim reaktoro As Object = Py.Import("reaktoro")
+            Dim np As Object = Py.Import("numpy")
 
             'Initialize a thermodynamic database
             Dim db = reaktoro.Database("supcrt98.xml")
@@ -102,24 +103,13 @@ Public Class ActivityCoefficients
 
             'Construct the chemical system
             Dim mySystem = reaktoro.ChemicalSystem(editor)
-
-            'Define the chemical equilibrium problem
-            Dim problem = reaktoro.EquilibriumProblem(mySystem)
-            problem.setTemperature(T, "kelvin")
-            problem.setPressure(P, "pascal")
-
-            For Each item In speciesAmounts
-                problem.add(item.Key, item.Value, "mol")
-            Next
-
-            'Calculate the chemical equilibrium state
-            Dim state = reaktoro.equilibrate(problem)
-
-            Dim properties = state.properties
+            Dim mols = np.fromiter(speciesAmounts.Values.ToArray(), np.float64)
+            Dim props = reaktoro.ChemicalProperties(mySystem)
+            props.update(T, P, mols)
 
             Dim species = mySystem.species()
 
-            Dim ac = properties.lnActivityCoefficients().val
+            Dim ac = props.lnActivityCoefficients().val
 
             i = 0
             For Each item In ac
