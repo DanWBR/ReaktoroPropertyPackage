@@ -46,3 +46,4 @@ Xenon	Xe	Xe(aq)	Xe(g)	Xe(liq)
 Nitric acid	HNO3	HNO3(aq)		
 Hydrogen chloride	HCl	HCl(aq)		
 Sulfuric acid	H2SO4			
+Hydrogen sulfate (ion)	HSO4-	HSO4-		

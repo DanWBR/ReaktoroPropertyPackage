@@ -103,7 +103,9 @@ Public Class ActivityCoefficients
 
             'Construct the chemical system
             Dim mySystem = reaktoro.ChemicalSystem(editor)
+
             Dim mols = np.fromiter(speciesAmounts.Values.ToArray(), np.float64)
+
             Dim props = reaktoro.ChemicalProperties(mySystem)
             props.update(T, P, mols)
 
