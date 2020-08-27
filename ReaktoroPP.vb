@@ -827,6 +827,12 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
                     constprops.Add(su.ConstantProperties)
                 Next
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.osmoticCoefficient = Me.m_elec.OsmoticCoeff(RET_VMOL(phase), actcalc.Calculate(RET_VMOL(phase), T, P, Me), constprops)
+            Case "miac"
+                Dim constprops As New List(Of ICompoundConstantProperties)
+                For Each su As ICompound In Me.CurrentMaterialStream.Phases(0).Compounds.Values
+                    constprops.Add(su.ConstantProperties)
+                Next
+                Me.CurrentMaterialStream.Phases(phaseID).Properties.mean_ionic_acitivty_coefficient = Me.m_elec.MIAC(RET_VMOL(phase), RET_VMOL(Phase.Solid), T, constprops)
             Case "freezingpoint"
                 Dim constprops As New List(Of ICompoundConstantProperties)
                 For Each su As ICompound In Me.CurrentMaterialStream.Phases(0).Compounds.Values
@@ -912,6 +918,7 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
             Me.DW_CalcProp("freezingpoint", Phase.Liquid1)
             Me.DW_CalcProp("freezingpointdepression", Phase.Liquid1)
             Me.DW_CalcProp("ph", Phase.Liquid1)
+            Me.DW_CalcProp("miac", Phase.Liquid1)
 
         End If
 
