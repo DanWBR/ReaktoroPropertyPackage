@@ -136,10 +136,15 @@ Imports DWSIM.GlobalSettings
 
         If Not Settings.PythonInitialized Then
 
-            proppack.Flowsheet.RunCodeOnUIThread(Sub()
-                                                     PythonEngine.Initialize()
-                                                     PythonEngine.BeginAllowThreads()
-                                                 End Sub)
+            If proppack.Flowsheet IsNot Nothing Then
+                proppack.Flowsheet.RunCodeOnUIThread(Sub()
+                                                         PythonEngine.Initialize()
+                                                         PythonEngine.BeginAllowThreads()
+                                                     End Sub)
+            Else
+                PythonEngine.Initialize()
+                PythonEngine.BeginAllowThreads()
+            End If
 
             Settings.PythonInitialized = True
 
@@ -171,8 +176,17 @@ Imports DWSIM.GlobalSettings
         Next
         aqueous = aqueous.TrimEnd()
         gaseous = gaseous.TrimEnd()
+        Dim pystate = Py.GIL()
 
-        Using (Py.GIL())
+        Dim ex0 As Exception = Nothing
+
+        Try
+
+            Dim sys As Object = PythonEngine.ImportModule("sys")
+
+            Dim codeToRedirectOutput As String = "import sys" & Environment.NewLine + "from io import BytesIO as StringIO" & Environment.NewLine + "sys.stdout = mystdout = StringIO()" & Environment.NewLine + "sys.stdout.flush()" & Environment.NewLine + "sys.stderr = mystderr = StringIO()" & Environment.NewLine + "sys.stderr.flush()"
+
+            PythonEngine.RunSimpleString(codeToRedirectOutput)
 
             Dim reaktoro As Object = Py.Import("reaktoro")
 
@@ -260,7 +274,19 @@ Imports DWSIM.GlobalSettings
 
             sumN = Vn + Ln + Sn
 
-        End Using
+        Catch ex As Exception
+
+            proppack.Flowsheet?.ShowMessage("Reaktoro error: " + ex.Message, DWSIM.Interfaces.IFlowsheet.MessageType.GeneralError)
+            ex0 = ex
+
+        Finally
+
+            pystate?.Dispose()
+            pystate = Nothing
+
+        End Try
+
+        If ex0 IsNot Nothing Then Throw ex0
 
         'return flash calculation results.
 

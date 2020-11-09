@@ -88,7 +88,17 @@ Public Class ActivityCoefficients
         Next
         aqueous = aqueous.TrimEnd()
 
-        Using (Py.GIL())
+        Dim pystate = Py.GIL()
+
+        Dim ex0 As Exception = Nothing
+
+        Try
+
+            Dim sys As Object = PythonEngine.ImportModule("sys")
+
+            Dim codeToRedirectOutput As String = "import sys" & Environment.NewLine + "from io import BytesIO as StringIO" & Environment.NewLine + "sys.stdout = mystdout = StringIO()" & Environment.NewLine + "sys.stdout.flush()" & Environment.NewLine + "sys.stderr = mystderr = StringIO()" & Environment.NewLine + "sys.stderr.flush()"
+
+            PythonEngine.RunSimpleString(codeToRedirectOutput)
 
             Dim reaktoro As Object = Py.Import("reaktoro")
             Dim np As Object = Py.Import("numpy")
@@ -120,9 +130,23 @@ Public Class ActivityCoefficients
                 i += 1
             Next
 
-        End Using
+        Catch ex As Exception
 
-        Return activcoeff.ExpY()
+            pp.Flowsheet?.ShowMessage("Reaktoro error: " + ex.Message, DWSIM.Interfaces.IFlowsheet.MessageType.GeneralError)
+            ex0 = ex
+
+        Finally
+
+            pystate?.Dispose()
+            pystate = Nothing
+
+        End Try
+
+        If ex0 IsNot Nothing Then
+            Throw ex0
+        Else
+            Return activcoeff.ExpY()
+        End If
 
     End Function
 
