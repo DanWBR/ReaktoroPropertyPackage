@@ -132,6 +132,9 @@ Imports DWSIM.GlobalSettings
 
             PythonPathSet = True
 
+            AddDllDirectory(ppath)
+            AddDllDirectory(Path.Combine(ppath, "Library", "bin"))
+
         End If
 
         If Not Settings.PythonInitialized Then
