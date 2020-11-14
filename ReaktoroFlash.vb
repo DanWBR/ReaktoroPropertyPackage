@@ -183,9 +183,9 @@ Imports DWSIM.GlobalSettings
 
         Dim ex0 As Exception = Nothing
 
-        Try
+        Dim sys As Object = PythonEngine.ImportModule("sys")
 
-            Dim sys As Object = PythonEngine.ImportModule("sys")
+        Try
 
             Dim codeToRedirectOutput As String = "import sys" & Environment.NewLine + "from io import BytesIO as StringIO" & Environment.NewLine + "sys.stdout = mystdout = StringIO()" & Environment.NewLine + "sys.stdout.flush()" & Environment.NewLine + "sys.stderr = mystderr = StringIO()" & Environment.NewLine + "sys.stderr.flush()"
 
@@ -217,8 +217,8 @@ Imports DWSIM.GlobalSettings
             'Calculate the chemical equilibrium state
             Dim state = reaktoro.equilibrate(problem)
 
-            Dim Ln As Double = state.phaseAmount("Aqueous").ToString().ToDoubleFromCurrent()
-            Dim Vn As Double = state.phaseAmount("Gaseous").ToString().ToDoubleFromCurrent()
+            Dim Ln As Double = state.phaseAmount("Aqueous").ToString().ToDoubleFromInvariant()
+            Dim Vn As Double = state.phaseAmount("Gaseous").ToString().ToDoubleFromInvariant()
             Dim Sn As Double = 0.0
 
             Dim properties = state.properties
@@ -229,15 +229,15 @@ Imports DWSIM.GlobalSettings
             i = 0
             For Each item In species
                 Dim name = item.name.ToString()
-                speciesAmountsFinal.Add(name, amounts(i).ToString().ToDoubleFromCurrent())
+                speciesAmountsFinal.Add(name, amounts(i).ToString().ToDoubleFromInvariant())
                 If Not compoundAmountsFinal.ContainsKey(inverseMaps(name)) Then
                     compoundAmountsFinal.Add(inverseMaps(name), 0.0)
                 End If
-                compoundAmountsFinal(inverseMaps(name)) += amounts(i).ToString().ToDoubleFromCurrent()
+                compoundAmountsFinal(inverseMaps(name)) += amounts(i).ToString().ToDoubleFromInvariant()
                 If CompoundProperties(formulas.IndexOf(inverseMaps(name))).IsSalt Then
                     speciesPhases(name) = "S"
-                    Sn += amounts(i).ToString().ToDoubleFromCurrent()
-                    Ln -= amounts(i).ToString().ToDoubleFromCurrent()
+                    Sn += amounts(i).ToString().ToDoubleFromInvariant()
+                    Ln -= amounts(i).ToString().ToDoubleFromInvariant()
                 End If
                 i += 1
             Next
@@ -248,11 +248,11 @@ Imports DWSIM.GlobalSettings
                 Dim index = formulas.IndexOf(inverseMaps(name))
                 Select Case speciesPhases(name)
                     Case "V"
-                        Vxv(index) = amounts(i).ToString().ToDoubleFromCurrent()
+                        Vxv(index) = amounts(i).ToString().ToDoubleFromInvariant()
                     Case "L"
-                        Vxl(index) = amounts(i).ToString().ToDoubleFromCurrent()
+                        Vxl(index) = amounts(i).ToString().ToDoubleFromInvariant()
                     Case "S"
-                        Vxs(index) = amounts(i).ToString().ToDoubleFromCurrent()
+                        Vxs(index) = amounts(i).ToString().ToDoubleFromInvariant()
                 End Select
                 Vnf(index) = compoundAmountsFinal(inverseMaps(name))
                 i += 1
@@ -267,7 +267,7 @@ Imports DWSIM.GlobalSettings
             i = 0
             For Each item In ac
                 Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
-                activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromCurrent())
+                activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
                 i += 1
             Next
 
@@ -283,6 +283,14 @@ Imports DWSIM.GlobalSettings
             ex0 = ex
 
         Finally
+
+            Dim pyStderr = sys.stderr.getvalue()
+            If pyStderr IsNot Nothing Then
+                If pyStderr.ToString() <> "b" + Chr(39) + Chr(39) Then
+                    pyStderr = pyStderr.ToString().Replace("\n", "\r\n")
+                    proppack.Flowsheet?.ShowMessage("Reaktoro error: " + pyStderr, DWSIM.Interfaces.IFlowsheet.MessageType.GeneralError)
+                End If
+            End If
 
             pystate?.Dispose()
             pystate = Nothing

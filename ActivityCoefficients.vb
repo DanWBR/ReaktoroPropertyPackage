@@ -129,7 +129,7 @@ Public Class ActivityCoefficients
             i = 0
             For Each item In ac
                 Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
-                activcoeff(index) = item.ToString().ToDoubleFromCurrent()
+                activcoeff(index) = item.ToString().ToDoubleFromInvariant()
                 i += 1
             Next
 
