@@ -1,4 +1,5 @@
 ﻿Imports FileHelpers
+Imports System.IO
 
 <DelimitedRecord(vbTab)> <IgnoreFirst()> <System.Serializable()>
 Public Class CompoundMap
@@ -19,7 +20,9 @@ Public Class CompoundMapper
         Dim map() As CompoundMap
         Dim fh1 As New FileHelperEngine(Of CompoundMap)
 
-        Using filestr As IO.Stream = System.Reflection.Assembly.GetAssembly(Me.GetType).GetManifestResourceStream("ReaktoroPropertyPackage.Reaktoro.txt")
+        Dim filepath As String = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ReaktoroPropertyPackage.CompoundMaps.txt")
+
+        Using filestr As New FileStream(filepath, FileMode.OpenOrCreate)
             Using t As New IO.StreamReader(filestr)
                 map = fh1.ReadStream(t)
             End Using

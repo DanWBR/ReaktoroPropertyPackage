@@ -1,4 +1,4 @@
-Name	Formula	Aqueous	Gaseous	Liquid
+Name (DWSIM)	Formula (DWSIM)	Aqueous Name (Reaktoro)	Gaseous Name (Reaktoro)	Liquid Name (Reaktoro)
 Cesium Iodide	CsI	CsI(aq)		
 Chloride (ion)	Cl-	Cl-		
 Bromine (ion)	Br-	Br-		

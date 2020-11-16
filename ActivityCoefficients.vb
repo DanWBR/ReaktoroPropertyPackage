@@ -35,7 +35,7 @@ Public Class ActivityCoefficients
 
         For Each na In names
             If Not CompoundMaps.Maps.ContainsKey(na) Then
-                Throw New Exception(String.Format("Compound {0} is not supported by this Property Package [{1}].", na, pp.ComponentName))
+                'Throw New Exception(String.Format("Compound {0} is not supported by this Property Package [{1}].", na, pp.ComponentName))
             End If
         Next
 
@@ -107,7 +107,7 @@ Public Class ActivityCoefficients
             Dim np As Object = Py.Import("numpy")
 
             'Initialize a thermodynamic database
-            Dim db = reaktoro.Database("supcrt98.xml")
+            Dim db = reaktoro.Database("supcrt07-organics.xml")
 
             'Define the chemical system
             Dim editor = reaktoro.ChemicalEditor(db)

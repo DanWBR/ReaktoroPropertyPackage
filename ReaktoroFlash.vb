@@ -194,7 +194,7 @@ Imports DWSIM.GlobalSettings
             Dim reaktoro As Object = Py.Import("reaktoro")
 
             'Initialize a thermodynamic database
-            Dim db = reaktoro.Database("supcrt98.xml")
+            Dim db = reaktoro.Database("supcrt07-organics.xml")
 
             'Define the chemical system
             Dim editor = reaktoro.ChemicalEditor(db)
