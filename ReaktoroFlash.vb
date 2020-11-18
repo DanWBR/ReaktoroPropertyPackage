@@ -266,8 +266,10 @@ Imports DWSIM.GlobalSettings
 
             i = 0
             For Each item In ac
-                Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
-                activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                If speciesPhases(species(i).name.ToString()) = "L" Then
+                    Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
+                    activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                End If
                 i += 1
             Next
 
@@ -559,127 +561,313 @@ Imports DWSIM.GlobalSettings
 
     Public Overloads Function Flash_PV(ByVal Vz As Double(), ByVal P As Double, ByVal V As Double, ByVal Tref As Double) As Object
 
-        Dim n, ecount As Integer
-        Dim d1, d2 As Date, dt As TimeSpan
+        If V > 0.000000001 Then Throw New Exception("Reaktoro's PVF Flash only supports the bubble-point (VF=0) specification.")
 
-        d1 = Date.Now
+        Dim n As Integer = CompoundProperties.Count - 1
+        Dim activcoeff(n) As Double
+        Dim i As Integer
 
-        Dim maxitINT As Integer = 100
-        Dim maxitEXT As Integer = 100
-        Dim tolINT As Double = 0.00001
-        Dim tolEXT As Double = 0.00001
+        Dim T As Double = Tref
 
-        n = Vz.Length - 1
+        'Vnf = feed molar amounts (considering 1 mol of feed)
+        'Vnl = liquid phase molar amounts
+        'Vnv = vapor phase molar amounts
+        'Vns = solid phase molar amounts
+        'Vxl = liquid phase molar fractions
+        'Vxv = vapor phase molar fractions
+        'Vxs = solid phase molar fractions
+        'V, S, L = phase molar amounts (F = 1 = V + S + L)
 
-        Dim Vx(n), Vy(n), Vp(n), gamma(n), Vcalc, Vspec, T, x, x0, x00, fx, fx0, fx00, Pcalc As Double
+        Dim Vp(n), Vnf(n), Vnl(n), Vnl_ant(n), Vxl(n), Vns(n), Vxs(n), Vnv(n), Vxv(n), Vxv_ant(n), Vf(n), Ki(n), S, L, f0, f1, f2, x0, x1, x2 As Double
+        Dim sumN As Double = 0
 
-        Dim nl As New NestedLoops
+        Dim Tmin, Tmax As Double
 
-        ecount = 0
-        Vspec = V
-        x = Tref
+        Tmin = 273.15
+        Tmax = 500.0
 
-        Dim tmp As Dictionary(Of String, Object)
+        Dim Vspec = V
 
-        If Vspec = 0.0# Then
+        Dim saltonly As Boolean = False
+        For i = 0 To Vz.Length - 1
+            If Vz(i) > 0 And CompoundProperties(i).IsSalt Then
+                saltonly = True
+            ElseIf Vz(i) > 0 And Not CompoundProperties(i).IsSalt Then
+                saltonly = False
+                Exit For
+            End If
+        Next
 
-            'bubble point
+        If saltonly Then
 
-            Do
+            'return flash calculation results.
 
-                Vp = proppack.RET_VPVAP(x)
+            Dim resultsS As New Dictionary(Of String, Object)
 
-                tmp = Flash_PT(Vz, x, P)
+            resultsS.Add("MixtureMoleFlows", Vz)
+            resultsS.Add("VaporPhaseMoleFraction", 0.0)
+            resultsS.Add("LiquidPhaseMoleFraction", 0.0)
+            resultsS.Add("SolidPhaseMoleFraction", 1.0)
+            resultsS.Add("VaporPhaseMolarComposition", proppack.RET_NullVector)
+            resultsS.Add("LiquidPhaseMolarComposition", proppack.RET_NullVector)
+            resultsS.Add("SolidPhaseMolarComposition", Vz)
+            resultsS.Add("LiquidPhaseActivityCoefficients", proppack.RET_UnitaryVector)
+            resultsS.Add("Temperature", T)
+            resultsS.Add("MoleSum", 1.0)
 
-                gamma = tmp("LiquidPhaseActivityCoefficients")
-
-                fx00 = fx0
-                fx0 = fx
-
-                Pcalc = 0.0#
-                For i = 0 To n
-                    If Not CompoundProperties(i).IsIon And Not CompoundProperties(i).IsSalt Then
-                        Pcalc += gamma(i) * Vp(i)
-                    End If
-                Next
-
-                fx = P - Pcalc
-
-                If Abs(fx) < 1.0# Then Exit Do
-
-                x00 = x0
-                x0 = x
-
-                If ecount <= 1 Then
-                    x += 1.0#
-                Else
-                    If ecount < 10 Then
-                        x = x - 0.1 * fx * (x - x00) / (fx - fx00)
-                    Else
-                        x = x - fx * (x - x00) / (fx - fx00)
-                    End If
-                    If Double.IsNaN(x) Then Throw New Exception(Calculator.GetLocalString("PropPack_FlashError"))
-                End If
-
-                ecount += 1
-
-                If ecount > 1000 Then Throw New Exception(Calculator.GetLocalString("PropPack_FlashMaxIt2"))
-
-            Loop
-
-        Else
-
-            Do
-
-                tmp = Flash_PT(Vz, x, P)
-
-                Vcalc = tmp("VaporPhaseMoleFraction")
-
-                fx00 = fx0
-                fx0 = fx
-
-                fx = Vspec - Vcalc
-
-                If Abs(fx) < tolEXT Then Exit Do
-
-                x00 = x0
-                x0 = x
-
-                If ecount <= 1 Then
-                    x += 1.0#
-                Else
-                    x = x - 0.3 * fx * (x - x00) / (fx - fx00)
-                    If Double.IsNaN(x) Then Throw New Exception(Calculator.GetLocalString("PropPack_FlashError"))
-                End If
-
-                ecount += 1
-
-                If ecount > maxitEXT Then Throw New Exception(Calculator.GetLocalString("PropPack_FlashMaxIt2"))
-
-            Loop
+            Return resultsS
 
         End If
 
-        T = x
+        Vnf = Vz.Clone
 
-        d2 = Date.Now
+        Vf0 = Vz.Clone
 
-        dt = d2 - d1
+        Dim names = proppack.RET_VNAMES().ToList
+        Dim formulas As New List(Of String)
 
-        WriteDebugInfo("PV Flash [Sour Water]: Converged in " & ecount & " iterations. Time taken: " & dt.TotalMilliseconds & " ms.")
+        For Each na In names
+            If Not CompoundMaps.Maps.ContainsKey(na) Then
+                Throw New Exception(String.Format("Compound {0} is not supported by this Property Package [{1}].", na, proppack.ComponentName))
+            End If
+        Next
+
+        If Not PythonPathSet Then
+
+            Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
+            Dim append As String = ppath + ";" + Path.Combine(ppath, "Library", "bin") + ";"
+
+            Dim p1 As String = append + Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine)
+            ' Set Path
+            Environment.SetEnvironmentVariable("PATH", p1, EnvironmentVariableTarget.Process)
+            ' Set PythonHome
+            Environment.SetEnvironmentVariable("PYTHONHOME", ppath, EnvironmentVariableTarget.Process)
+            ' Set PythonPath
+            Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(p1, "Lib"), EnvironmentVariableTarget.Process)
+
+            PythonPathSet = True
+
+            AddDllDirectory(ppath)
+            AddDllDirectory(Path.Combine(ppath, "Library", "bin"))
+
+        End If
+
+        If Not Settings.PythonInitialized Then
+
+            If proppack.Flowsheet IsNot Nothing Then
+                proppack.Flowsheet.RunCodeOnUIThread(Sub()
+                                                         PythonEngine.Initialize()
+                                                         PythonEngine.BeginAllowThreads()
+                                                     End Sub)
+            Else
+                PythonEngine.Initialize()
+                PythonEngine.BeginAllowThreads()
+            End If
+
+            Settings.PythonInitialized = True
+
+        End If
+
+        Dim speciesPhases As New Dictionary(Of String, String)
+        Dim speciesAmounts As New Dictionary(Of String, Double)
+        Dim speciesAmountsFinal As New Dictionary(Of String, Double)
+        Dim compoundAmountsFinal As New Dictionary(Of String, Double)
+        Dim inverseMaps As New Dictionary(Of String, String)
+
+        Dim aqueous As String = "", gaseous As String = ""
+
+        i = 0
+        For Each na In names
+            formulas.Add(CompoundMaps.Maps(na).Formula)
+            speciesAmounts.Add(CompoundMaps.Maps(na).Formula, Vz(i))
+            If CompoundMaps.Maps(na).AqueousName <> "" Then
+                aqueous += CompoundMaps.Maps(na).AqueousName + " "
+                speciesPhases.Add(CompoundMaps.Maps(na).AqueousName, "L")
+                inverseMaps.Add(CompoundMaps.Maps(na).AqueousName, CompoundMaps.Maps(na).Formula)
+            End If
+            If CompoundMaps.Maps(na).GaseousName <> "" Then
+                gaseous += CompoundMaps.Maps(na).GaseousName + " "
+                speciesPhases.Add(CompoundMaps.Maps(na).GaseousName, "V")
+                inverseMaps.Add(CompoundMaps.Maps(na).GaseousName, CompoundMaps.Maps(na).Formula)
+            End If
+            i += 1
+        Next
+        aqueous = aqueous.TrimEnd()
+        gaseous = gaseous.TrimEnd()
+        Dim pystate = Py.GIL()
+
+        Dim ex0 As Exception = Nothing
+
+        Dim sys As Object = PythonEngine.ImportModule("sys")
+
+        Dim codeToRedirectOutput As String = "import sys" & Environment.NewLine + "from io import BytesIO as StringIO" & Environment.NewLine + "sys.stdout = mystdout = StringIO()" & Environment.NewLine + "sys.stdout.flush()" & Environment.NewLine + "sys.stderr = mystderr = StringIO()" & Environment.NewLine + "sys.stderr.flush()"
+
+        PythonEngine.RunSimpleString(codeToRedirectOutput)
+
+        Dim reaktoro As Object = Py.Import("reaktoro")
+
+        'Initialize a thermodynamic database
+        Dim db = reaktoro.Database("supcrt07-organics.xml")
+
+        'Define the chemical system
+        Dim editor = reaktoro.ChemicalEditor(db)
+
+        editor.addAqueousPhase(aqueous)
+        editor.addGaseousPhase(gaseous)
+
+        'Construct the chemical system
+        Dim mySystem = reaktoro.ChemicalSystem(editor)
+
+        Try
+
+            If T = 0.0 Then T = 298.15
+
+            'Define the chemical equilibrium problem
+            Dim problem = reaktoro.EquilibriumProblem(mySystem)
+            problem.setPressure(P, "pascal")
+
+            For Each item In speciesAmounts
+                problem.add(item.Key, item.Value, "mol")
+            Next
+
+            Dim counter As Integer = 0
+
+            Do
+
+                problem.setTemperature(T, "kelvin")
+
+                'Calculate the chemical equilibrium state
+                Dim state = reaktoro.equilibrate(problem)
+
+                Dim Ln As Double = state.phaseAmount("Aqueous").ToString().ToDoubleFromInvariant()
+                Dim Vn As Double = state.phaseAmount("Gaseous").ToString().ToDoubleFromInvariant()
+                Dim Sn As Double = 0.0
+
+                Dim properties = state.properties
+
+                Dim species = mySystem.species()
+                Dim amounts = state.speciesAmounts()
+
+                speciesAmounts.Clear()
+                speciesAmountsFinal.Clear()
+                compoundAmountsFinal.Clear()
+
+                i = 0
+                For Each item In species
+                    Dim name = item.name.ToString()
+                    speciesAmountsFinal.Add(name, amounts(i).ToString().ToDoubleFromInvariant())
+                    If Not compoundAmountsFinal.ContainsKey(inverseMaps(name)) Then
+                        compoundAmountsFinal.Add(inverseMaps(name), 0.0)
+                    End If
+                    compoundAmountsFinal(inverseMaps(name)) += amounts(i).ToString().ToDoubleFromInvariant()
+                    If CompoundProperties(formulas.IndexOf(inverseMaps(name))).IsSalt Then
+                        speciesPhases(name) = "S"
+                        Sn += amounts(i).ToString().ToDoubleFromInvariant()
+                        Ln -= amounts(i).ToString().ToDoubleFromInvariant()
+                    End If
+                    i += 1
+                Next
+
+                i = 0
+                For Each item In species
+                    Dim name = item.name.ToString()
+                    Dim index = formulas.IndexOf(inverseMaps(name))
+                    Select Case speciesPhases(name)
+                        Case "V"
+                            Vxv(index) = amounts(i).ToString().ToDoubleFromInvariant()
+                        Case "L"
+                            Vxl(index) = amounts(i).ToString().ToDoubleFromInvariant()
+                        Case "S"
+                            Vxs(index) = amounts(i).ToString().ToDoubleFromInvariant()
+                    End Select
+                    Vnf(index) = compoundAmountsFinal(inverseMaps(name))
+                    i += 1
+                Next
+
+                Vxv = Vxv.NormalizeY()
+                Vxl = Vxl.NormalizeY()
+                Vxs = Vxs.NormalizeY()
+
+                Dim ac = properties.lnActivityCoefficients().val
+
+                i = 0
+                For Each item In ac
+                    If speciesPhases(species(i).name.ToString()) = "L" Then
+                        Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
+                        activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                    End If
+                    i += 1
+                Next
+
+                For i = 0 To n
+                    Vp(i) = proppack.AUX_PVAPi(i, T) / P
+                Next
+
+                f0 = f1
+                f1 = f2
+                f2 = activcoeff.MultiplyY(Vp).MultiplyY(Vxl).SumY - 1.0
+
+                If Double.IsNaN(f2) Then Throw New Exception("Failed to converge")
+                If Abs(f2) < 0.0001 Then Exit Do
+
+                x0 = x1
+                x1 = x2
+                x2 = T
+
+                If counter > 3 Then
+                    T -= f2 * (x2 - x0) / (f2 - f0)
+                Else
+                    T *= 1.01
+                End If
+
+                V = Vn / (Vn + Ln + Sn)
+                L = Ln / (Vn + Ln + Sn)
+                S = Sn / (Vn + Ln + Sn)
+
+                sumN = Vn + Ln + Sn
+
+                counter += 1
+
+            Loop Until counter = 100
+
+            If counter = 100 Then Throw New Exception("Failed to converge")
+
+        Catch ex As Exception
+
+            proppack.Flowsheet?.ShowMessage("Reaktoro error: " + ex.Message, DWSIM.Interfaces.IFlowsheet.MessageType.GeneralError)
+            ex0 = ex
+
+        Finally
+
+            Dim pyStderr = sys.stderr.getvalue()
+            If pyStderr IsNot Nothing Then
+                If pyStderr.ToString() <> "b" + Chr(39) + Chr(39) Then
+                    pyStderr = pyStderr.ToString().Replace("\n", "\r\n")
+                    proppack.Flowsheet?.ShowMessage("Reaktoro error: " + pyStderr, DWSIM.Interfaces.IFlowsheet.MessageType.GeneralError)
+                End If
+            End If
+
+            pystate?.Dispose()
+            pystate = Nothing
+
+        End Try
+
+        If ex0 IsNot Nothing Then Throw ex0
+
+        'return flash calculation results.
 
         Dim results As New Dictionary(Of String, Object)
 
-        results.Add("MixtureMoleFlows", tmp("MixtureMoleFlows"))
-        results.Add("VaporPhaseMoleFraction", tmp("VaporPhaseMoleFraction"))
-        results.Add("LiquidPhaseMoleFraction", tmp("LiquidPhaseMoleFraction"))
-        results.Add("SolidPhaseMoleFraction", tmp("SolidPhaseMoleFraction"))
-        results.Add("VaporPhaseMolarComposition", tmp("VaporPhaseMolarComposition"))
-        results.Add("LiquidPhaseMolarComposition", tmp("LiquidPhaseMolarComposition"))
-        results.Add("SolidPhaseMolarComposition", tmp("SolidPhaseMolarComposition"))
-        results.Add("MoleSum", tmp("MoleSum"))
+        results.Add("MixtureMoleFlows", Vnf)
+        results.Add("VaporPhaseMoleFraction", V)
+        results.Add("LiquidPhaseMoleFraction", L)
+        results.Add("SolidPhaseMoleFraction", S)
+        results.Add("VaporPhaseMolarComposition", Vxv)
+        results.Add("LiquidPhaseMolarComposition", Vxl)
+        results.Add("SolidPhaseMolarComposition", Vxs)
+        results.Add("LiquidPhaseActivityCoefficients", activcoeff)
         results.Add("Temperature", T)
-        results.Add("LiquidPhaseActivityCoefficients", tmp("LiquidPhaseActivityCoefficients"))
+        results.Add("MoleSum", sumN)
 
         Return results
 

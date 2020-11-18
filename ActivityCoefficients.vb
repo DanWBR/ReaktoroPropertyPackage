@@ -86,6 +86,8 @@ Public Class ActivityCoefficients
                 aqueous += CompoundMaps.Maps(na).AqueousName + " "
                 speciesPhases.Add(CompoundMaps.Maps(na).AqueousName, "L")
                 inverseMaps.Add(CompoundMaps.Maps(na).AqueousName, CompoundMaps.Maps(na).Formula)
+            Else
+                speciesPhases.Add(CompoundMaps.Maps(na).AqueousName, "")
             End If
             i += 1
         Next
@@ -128,8 +130,10 @@ Public Class ActivityCoefficients
 
             i = 0
             For Each item In ac
-                Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
-                activcoeff(index) = item.ToString().ToDoubleFromInvariant()
+                If speciesPhases(species(i).name.ToString()) = "L" Then
+                    Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
+                    activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                End If
                 i += 1
             Next
 
