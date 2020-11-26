@@ -26,6 +26,7 @@ Public Class ActivityCoefficients
         If saltonly Then Return pp.RET_UnitaryVector()
 
         Dim CompoundMaps = New CompoundMapper()
+        Dim Setschenow As New SetschenowCoefficients()
 
         Dim n As Integer = Vx.Length - 1
         Dim activcoeff(n) As Double
@@ -114,7 +115,18 @@ Public Class ActivityCoefficients
             'Define the chemical system
             Dim editor = reaktoro.ChemicalEditor(db)
 
-            editor.addAqueousPhase(aqueous)
+            Dim aqueousPhase = editor.addAqueousPhase(aqueous)
+
+            aqueousPhase.setChemicalModelHKF()
+            aqueousPhase.setActivityModelDrummondCO2()
+            i = 0
+            For Each na In names
+                If CompoundMaps.Maps(na).AqueousName <> "" And na <> "Water" And
+                    Not CompProps(i).IsIon And Not CompProps(i).IsSalt Then
+                    aqueousPhase.setActivityModelSetschenow(CompoundMaps.Maps(na).AqueousName, Setschenow.GetValue(na))
+                End If
+                i += 1
+            Next
 
             'Construct the chemical system
             Dim mySystem = reaktoro.ChemicalSystem(editor)
@@ -128,14 +140,20 @@ Public Class ActivityCoefficients
 
             Dim ac = props.lnActivityCoefficients().val
 
+
             i = 0
             For Each item In ac
                 If speciesPhases(species(i).name.ToString()) = "L" Then
                     Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
                     activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                    If names(i) = "Ammonia" Then
+                        'ammonia act coefficient
+                        activcoeff(index) = 1.68734806901 * Math.Exp(-790.33175622 / T + 4.12597652879 * Vx(index))
+                    End If
                 End If
                 i += 1
             Next
+
 
         Catch ex As Exception
 

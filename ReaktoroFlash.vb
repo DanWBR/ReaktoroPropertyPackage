@@ -31,13 +31,13 @@ Imports DWSIM.GlobalSettings
 
     Inherits FlashAlgorithm
 
-    Public CompoundMaps As CompoundMapper
+    Public CompoundMaps As New CompoundMapper
+
+    Public Property Setschenow As New SetschenowCoefficients
 
     Public Sub New()
 
         MyBase.New()
-
-        If CompoundMaps Is Nothing Then CompoundMaps = New CompoundMapper()
 
     End Sub
 
@@ -199,7 +199,19 @@ Imports DWSIM.GlobalSettings
             'Define the chemical system
             Dim editor = reaktoro.ChemicalEditor(db)
 
-            editor.addAqueousPhase(aqueous)
+            Dim aqueousPhase = editor.addAqueousPhase(aqueous)
+
+            aqueousPhase.setChemicalModelHKF()
+            aqueousPhase.setActivityModelDrummondCO2()
+            i = 0
+            For Each na In names
+                If CompoundMaps.Maps(na).AqueousName <> "" And na <> "Water" And
+                    Not CompoundProperties(i).IsIon And Not CompoundProperties(i).IsSalt Then
+                    aqueousPhase.setActivityModelSetschenow(CompoundMaps.Maps(na).AqueousName, Setschenow.GetValue(na))
+                End If
+                i += 1
+            Next
+
             editor.addGaseousPhase(gaseous)
 
             'Construct the chemical system
@@ -712,7 +724,19 @@ Imports DWSIM.GlobalSettings
         'Define the chemical system
         Dim editor = reaktoro.ChemicalEditor(db)
 
-        editor.addAqueousPhase(aqueous)
+        Dim aqueousPhase = editor.addAqueousPhase(aqueous)
+
+        aqueousPhase.setChemicalModelHKF()
+        aqueousPhase.setActivityModelDrummondCO2()
+        i = 0
+        For Each na In names
+            If CompoundMaps.Maps(na).AqueousName <> "" And na <> "Water" And
+                    Not CompoundProperties(i).IsIon And Not CompoundProperties(i).IsSalt Then
+                aqueousPhase.setActivityModelSetschenow(CompoundMaps.Maps(na).AqueousName, Setschenow.GetValue(na))
+            End If
+            i += 1
+        Next
+
         editor.addGaseousPhase(gaseous)
 
         'Construct the chemical system
@@ -795,6 +819,10 @@ Imports DWSIM.GlobalSettings
                     If speciesPhases(species(i).name.ToString()) = "L" Then
                         Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
                         activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                        If names(i) = "Ammonia" Then
+                            'ammonia act coefficient
+                            activcoeff(index) = 1.68734806901 * Exp(-790.33175622 / T + 4.12597652879 * Vxl(index))
+                        End If
                     End If
                     i += 1
                 Next
