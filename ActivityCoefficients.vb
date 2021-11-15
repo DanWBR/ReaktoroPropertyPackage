@@ -40,42 +40,13 @@ Public Class ActivityCoefficients
             End If
         Next
 
-        If Not PythonPathSet Then
+        If Not PythonInitialized Then
 
             Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
-            Dim append As String = ppath + ";" + Path.Combine(ppath, "Library", "bin") + ";"
 
-            Dim p1 As String = append + Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine)
-            ' Set Path
-            Environment.SetEnvironmentVariable("PATH", p1, EnvironmentVariableTarget.Process)
-            ' Set PythonHome
-            Environment.SetEnvironmentVariable("PYTHONHOME", ppath, EnvironmentVariableTarget.Process)
-            ' Set PythonPath
-            Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(p1, "Lib"), EnvironmentVariableTarget.Process)
+            DWSIM.GlobalSettings.Settings.ShutdownPythonEnvironment()
 
-            'set PYDLL
-            Dim pydll = Directory.GetFiles(ppath, "python3*.dll")
-            If pydll.Count > 0 Then
-                Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pydll(1), EnvironmentVariableTarget.Process)
-            Else
-                Throw New Exception("Could not find Python DLL in the defined Python path.")
-            End If
-
-            PythonPathSet = True
-
-            AddDllDirectory(ppath)
-            AddDllDirectory(Path.Combine(ppath, "Library", "bin"))
-
-        End If
-
-        If Not Settings.PythonInitialized Then
-
-            pp.Flowsheet.RunCodeOnUIThread(Sub()
-                                               PythonEngine.Initialize()
-                                               PythonEngine.BeginAllowThreads()
-                                           End Sub)
-
-            Settings.PythonInitialized = True
+            DWSIM.GlobalSettings.Settings.InitializePythonEnvironment(ppath)
 
         End If
 

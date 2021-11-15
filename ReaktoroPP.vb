@@ -79,7 +79,6 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
         End Get
     End Property
 
-
 #Region "    CalcEquilibrium Override"
 
     Public Overrides Sub DW_CalcEquilibrium(spec1 As FlashSpec, spec2 As FlashSpec)
