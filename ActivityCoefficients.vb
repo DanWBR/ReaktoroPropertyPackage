@@ -48,6 +48,8 @@ Public Class ActivityCoefficients
 
             DWSIM.GlobalSettings.Settings.InitializePythonEnvironment(ppath)
 
+            PythonInitialized = True
+
         End If
 
         Dim speciesPhases As New Dictionary(Of String, String)

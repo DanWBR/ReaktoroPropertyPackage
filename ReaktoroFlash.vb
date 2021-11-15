@@ -125,6 +125,8 @@ Imports DWSIM.GlobalSettings
 
             DWSIM.GlobalSettings.Settings.InitializePythonEnvironment(ppath)
 
+            PythonInitialized = True
+
         End If
 
         Dim speciesPhases As New Dictionary(Of String, String)
@@ -332,14 +334,15 @@ Imports DWSIM.GlobalSettings
 
         Dim fx, fx2, dfdx, x1, x0, dx As Double
 
-        x1 = Tref
+        x0 = Tref
+        x1 = Tref + 0.1
 
         Do
 
             If cnt < 2 Then
 
-                fx = Herror({x1})
-                fx2 = Herror({x1 + 0.1})
+                fx = Herror({x0})
+                fx2 = Herror({x1})
 
                 dfdx = (fx2 - fx) / 0.1
 
@@ -351,6 +354,8 @@ Imports DWSIM.GlobalSettings
                 dfdx = (fx - fx2) / (x1 - x0)
 
             End If
+
+            If Abs(dfdx) <= 0.001 Then Exit Do
 
             If Abs(fx) <= 0.01 Then Exit Do
 
@@ -625,6 +630,8 @@ Imports DWSIM.GlobalSettings
             DWSIM.GlobalSettings.Settings.ShutdownPythonEnvironment()
 
             DWSIM.GlobalSettings.Settings.InitializePythonEnvironment(ppath)
+
+            PythonInitialized = True
 
         End If
 
