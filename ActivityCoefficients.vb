@@ -40,17 +40,9 @@ Public Class ActivityCoefficients
             End If
         Next
 
-        If Not PythonInitialized Then
+        Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
 
-            Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
-
-            DWSIM.GlobalSettings.Settings.ShutdownPythonEnvironment()
-
-            DWSIM.GlobalSettings.Settings.InitializePythonEnvironment(ppath)
-
-            PythonInitialized = True
-
-        End If
+        Settings.InitializePythonEnvironment(ppath)
 
         Dim speciesPhases As New Dictionary(Of String, String)
         Dim speciesAmounts As New Dictionary(Of String, Double)
@@ -81,7 +73,7 @@ Public Class ActivityCoefficients
 
         Try
 
-            Dim sys As Object = PythonEngine.ImportModule("sys")
+            Dim sys As Object = Py.Import("sys")
 
             Dim codeToRedirectOutput As String = "import sys" & Environment.NewLine + "from io import BytesIO as StringIO" & Environment.NewLine + "sys.stdout = mystdout = StringIO()" & Environment.NewLine + "sys.stdout.flush()" & Environment.NewLine + "sys.stderr = mystderr = StringIO()" & Environment.NewLine + "sys.stderr.flush()"
 
@@ -122,17 +114,15 @@ Public Class ActivityCoefficients
             Dim ac = props.lnActivityCoefficients().val
 
 
-            i = 0
-            For Each item In ac
+            For i = 0 To ac.Length - 1
                 If speciesPhases(species(i).name.ToString()) = "L" Then
                     Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
-                    activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                    activcoeff(index) = Math.Exp(ac(i).ToString().ToDoubleFromInvariant())
                     'If names(i) = "Ammonia" Then
                     '    'ammonia act coefficient
                     '    activcoeff(index) = 1.68734806901 * Math.Exp(-790.33175622 / T + 4.12597652879 * Vx(index))
                     'End If
                 End If
-                i += 1
             Next
 
 

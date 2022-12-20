@@ -117,17 +117,9 @@ Imports DWSIM.GlobalSettings
             End If
         Next
 
-        If Not PythonInitialized Then
+        Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
 
-            Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
-
-            DWSIM.GlobalSettings.Settings.ShutdownPythonEnvironment()
-
-            DWSIM.GlobalSettings.Settings.InitializePythonEnvironment(ppath)
-
-            PythonInitialized = True
-
-        End If
+        Settings.InitializePythonEnvironment(ppath)
 
         Dim speciesPhases As New Dictionary(Of String, String)
         Dim speciesAmounts As New Dictionary(Of String, Double)
@@ -159,7 +151,7 @@ Imports DWSIM.GlobalSettings
 
         Dim ex0 As Exception = Nothing
 
-        Dim sys As Object = PythonEngine.ImportModule("sys")
+        Dim sys As Object = Py.Import("sys")
 
         Try
 
@@ -214,9 +206,8 @@ Imports DWSIM.GlobalSettings
             Dim species = mySystem.species()
             Dim amounts = state.speciesAmounts()
 
-            i = 0
-            For Each item In species
-                Dim name = item.name.ToString()
+            For i = 0 To species.Length - 1
+                Dim name = species(i).name.ToString()
                 speciesAmountsFinal.Add(name, amounts(i).ToString().ToDoubleFromInvariant())
                 If Not compoundAmountsFinal.ContainsKey(inverseMaps(name)) Then
                     compoundAmountsFinal.Add(inverseMaps(name), 0.0)
@@ -227,12 +218,10 @@ Imports DWSIM.GlobalSettings
                     Sn += amounts(i).ToString().ToDoubleFromInvariant()
                     Ln -= amounts(i).ToString().ToDoubleFromInvariant()
                 End If
-                i += 1
             Next
 
-            i = 0
-            For Each item In species
-                Dim name = item.name.ToString()
+            For i = 0 To species.Length - 1
+                Dim name = species(i).name.ToString()
                 Dim index = formulas.IndexOf(inverseMaps(name))
                 Select Case speciesPhases(name)
                     Case "V"
@@ -243,7 +232,6 @@ Imports DWSIM.GlobalSettings
                         Vxs(index) = amounts(i).ToString().ToDoubleFromInvariant()
                 End Select
                 Vnf(index) = compoundAmountsFinal(inverseMaps(name))
-                i += 1
             Next
 
             Vxv = Vxv.NormalizeY()
@@ -252,13 +240,11 @@ Imports DWSIM.GlobalSettings
 
             Dim ac = properties.lnActivityCoefficients().val
 
-            i = 0
-            For Each item In ac
+            For i = 0 To ac.Length - 1
                 If speciesPhases(species(i).name.ToString()) = "L" Then
                     Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
-                    activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                    activcoeff(index) = Math.Exp(ac(i).ToString().ToDoubleFromInvariant())
                 End If
-                i += 1
             Next
 
             V = Vn / (Vn + Ln + Sn)
@@ -623,17 +609,9 @@ Imports DWSIM.GlobalSettings
             End If
         Next
 
-        If Not PythonInitialized Then
+        Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
 
-            Dim ppath As String = Path.Combine(Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location), "reaktoro_python")
-
-            DWSIM.GlobalSettings.Settings.ShutdownPythonEnvironment()
-
-            DWSIM.GlobalSettings.Settings.InitializePythonEnvironment(ppath)
-
-            PythonInitialized = True
-
-        End If
+        Settings.InitializePythonEnvironment(ppath)
 
         Dim speciesPhases As New Dictionary(Of String, String)
         Dim speciesAmounts As New Dictionary(Of String, Double)
@@ -665,7 +643,7 @@ Imports DWSIM.GlobalSettings
 
         Dim ex0 As Exception = Nothing
 
-        Dim sys As Object = PythonEngine.ImportModule("sys")
+        Dim sys As Object = Py.Import("sys")
 
         Dim codeToRedirectOutput As String = "import sys" & Environment.NewLine + "from io import BytesIO as StringIO" & Environment.NewLine + "sys.stdout = mystdout = StringIO()" & Environment.NewLine + "sys.stdout.flush()" & Environment.NewLine + "sys.stderr = mystderr = StringIO()" & Environment.NewLine + "sys.stderr.flush()"
 
@@ -731,9 +709,8 @@ Imports DWSIM.GlobalSettings
                 speciesAmountsFinal.Clear()
                 compoundAmountsFinal.Clear()
 
-                i = 0
-                For Each item In species
-                    Dim name = item.name.ToString()
+                For i = 0 To species.Length - 1
+                    Dim name = species(i).name.ToString()
                     speciesAmountsFinal.Add(name, amounts(i).ToString().ToDoubleFromInvariant())
                     If Not compoundAmountsFinal.ContainsKey(inverseMaps(name)) Then
                         compoundAmountsFinal.Add(inverseMaps(name), 0.0)
@@ -744,12 +721,10 @@ Imports DWSIM.GlobalSettings
                         Sn += amounts(i).ToString().ToDoubleFromInvariant()
                         Ln -= amounts(i).ToString().ToDoubleFromInvariant()
                     End If
-                    i += 1
                 Next
 
-                i = 0
-                For Each item In species
-                    Dim name = item.name.ToString()
+                For i = 0 To species.Length - 1
+                    Dim name = species(i).name.ToString()
                     Dim index = formulas.IndexOf(inverseMaps(name))
                     Select Case speciesPhases(name)
                         Case "V"
@@ -760,7 +735,6 @@ Imports DWSIM.GlobalSettings
                             Vxs(index) = amounts(i).ToString().ToDoubleFromInvariant()
                     End Select
                     Vnf(index) = compoundAmountsFinal(inverseMaps(name))
-                    i += 1
                 Next
 
                 Vxv = Vxv.NormalizeY()
@@ -769,17 +743,15 @@ Imports DWSIM.GlobalSettings
 
                 Dim ac = properties.lnActivityCoefficients().val
 
-                i = 0
-                For Each item In ac
+                For i = 0 To ac.Length - 1
                     If speciesPhases(species(i).name.ToString()) = "L" Then
                         Dim index As Integer = formulas.IndexOf(inverseMaps(species(i).name.ToString()))
-                        activcoeff(index) = Math.Exp(item.ToString().ToDoubleFromInvariant())
+                        activcoeff(index) = Math.Exp(ac(i).ToString().ToDoubleFromInvariant())
                         'If names(i) = "Ammonia" Then
                         '    'ammonia act coefficient
                         '    activcoeff(index) = 1.68734806901 * Exp(-790.33175622 / T + 4.12597652879 * Vxl(index))
                         'End If
                     End If
-                    i += 1
                 Next
 
                 For i = 0 To n

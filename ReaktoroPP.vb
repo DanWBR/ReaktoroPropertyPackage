@@ -23,6 +23,7 @@ Imports DWSIM.Thermodynamics.PropertyPackages
 Imports DWSIM.Interfaces
 Imports DWSIM.Interfaces.Enums
 Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
+Imports System.Windows.Forms
 
 <System.Runtime.InteropServices.Guid(ReaktoroPropertyPackage.ClassId)>
 <System.Serializable()> Public Class ReaktoroPropertyPackage
@@ -61,6 +62,13 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
         f.Show()
 
     End Sub
+
+    Public Overrides Function GetEditingForm() As Form
+
+        Dim f As New FormConfig
+        Return f
+
+    End Function
 
 #Region "    DWSIM Functions"
 
@@ -911,7 +919,7 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
             Case State.Liquid
                 H = Me.RET_Hid(298.15, T, Vx) - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) - Me.m_elec.LiquidEnthalpy(T, Vx, constprops, actcalc.Calculate(Vx, T + 0.1, P, Me), actcalc.Calculate(Vx, T, P, Me), False)
             Case State.Solid
-                H = Me.RET_Hid(298.15, T, Vx) - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) - Me.m_elec.LiquidEnthalpy(T, Vx, constprops, actcalc.Calculate(Vx, T + 0.1, P, Me), actcalc.Calculate(Vx, T, P, Me), False) - Me.RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) - Me.m_elec.SolidEnthalpy(T, Vx, constprops)
+                H = Me.CalcSolidEnthalpyFromCp(T, Vx, DW_GetConstantProperties())
             Case State.Vapor
                 H = Me.RET_Hid(298.15, T, Vx)
         End Select
@@ -932,7 +940,7 @@ Imports DWSIM.Thermodynamics.PropertyPackages.Auxiliary.FlashAlgorithms
             Case State.Liquid
                 Return Me.RET_Sid(298.15, T, P, Vx) - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T
             Case State.Solid
-                Return Me.RET_Sid(298.15, T, P, Vx) - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T - Me.RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T
+                Return Me.CalcSolidEnthalpyFromCp(T, Vx, DW_GetConstantProperties()) / T
             Case State.Vapor
                 Return Me.RET_Sid(298.15, T, P, Vx)
         End Select
